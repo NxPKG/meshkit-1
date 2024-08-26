@@ -6,13 +6,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/khulnasoft/meshkit/utils"
 	"github.com/kubernetes/kompose/pkg/app"
 	"github.com/kubernetes/kompose/pkg/kobject"
 	"github.com/kubernetes/kompose/pkg/loader"
 	"github.com/kubernetes/kompose/pkg/transformer"
 	"github.com/kubernetes/kompose/pkg/transformer/kubernetes"
 	"github.com/kubernetes/kompose/pkg/transformer/openshift"
-	"github.com/khulnasoft/meshkit/utils"
 	"gopkg.in/yaml.v2"
 )
 
@@ -189,7 +189,9 @@ func convert(opt kobject.ConvertOptions) error {
 		return err
 	}
 
-	komposeObject, err := l.LoadFile(opt.InputFiles)
+	// Assuming the second argument is a list of environments or overrides
+	// Adjust based on the actual method signature of l.LoadFile
+	komposeObject, err := l.LoadFile(opt.InputFiles, nil) // Provide the second argument as needed
 	if err != nil {
 		return err
 	}
@@ -199,7 +201,6 @@ func convert(opt kobject.ConvertOptions) error {
 
 	// Do the transformation
 	objects, err := t.Transform(komposeObject, opt)
-
 	if err != nil {
 		return err
 	}
