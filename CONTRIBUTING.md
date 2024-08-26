@@ -96,7 +96,7 @@ Resources: https://lab.github.com and https://try.github.com/
 
 ### Instructions for making custom dictionary entries
 
-Enter new key:value pairs into the `useDictionary()` map in https://github.com/khulnasoft/meshkit/blob/master/utils/utils.go
+Enter new key:value pairs into the `useDictionary()` map in https://github.com/meshplay/meshkit/blob/master/utils/utils.go
 
 - Key: string to match
 - Value: string to display

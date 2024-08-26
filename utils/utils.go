@@ -18,7 +18,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/khulnasoft/meshkit/models/meshmodel/entity"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 // transforms the keys of a Map recursively with the given transform function
@@ -36,7 +38,8 @@ func TransformMapKeys(input map[string]interface{}, transformFunc func(string) s
 	return output
 }
 
-// unmarshal returns parses the JSON config data and stores the value in the reference to result
+// Deprecated: Use Unmarshal from encoding package.
+// TODO: Replace the usages from all projects.
 func Unmarshal(obj string, result interface{}) error {
 	obj = strings.TrimSpace(obj)
 	err := json.Unmarshal([]byte(obj), result)
@@ -211,7 +214,7 @@ func GetLatestReleaseTagsSorted(org string, repo string) ([]string, error) {
 	defer safeClose(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, ErrGettingLatestReleaseTag(err)
+		return nil, ErrGettingLatestReleaseTag(fmt.Errorf("unable to get latest release tag"))
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -288,17 +291,17 @@ func IsClosed[K any](ch chan K) bool {
 func WriteToFile(path string, content string) error {
 	file, err := os.Create(path)
 	if err != nil {
-		return err
+		return ErrCreateFile(err, path)
 	}
 
 	_, err = file.WriteString(content)
 	if err != nil {
-		return err
+		return ErrWriteFile(err, path)
 	}
 	// Close the file to save the changes.
 	err = file.Close()
 	if err != nil {
-		return err
+		return ErrWriteFile(err, path)
 	}
 	return nil
 }
@@ -343,6 +346,25 @@ func MergeMaps(mergeInto, toMerge map[string]interface{}) map[string]interface{}
 		mergeInto[k] = v
 	}
 	return mergeInto
+}
+
+func WriteYamlToFile[K any](outputPath string, data K) error {
+	byt, err := yaml.Marshal(data)
+	if err != nil {
+		// Use a different error code
+		return ErrMarshal(err)
+	}
+
+	file, err := os.Create(outputPath)
+	if err != nil {
+		return ErrCreateFile(err, outputPath)
+	}
+
+	_, err = file.Write(byt)
+	if err != nil {
+		return ErrWriteFile(err, outputPath)
+	}
+	return nil
 }
 
 func WriteJSONToFile[K any](outputPath string, data K) error {
@@ -390,10 +412,86 @@ func IsInterfaceNil(val interface{}) bool {
 	if val == nil {
 		return true
 	}
-	switch reflect.TypeOf(val).Kind() {
-	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
-		return reflect.ValueOf(val).IsNil()
-	}
-	return false
+	return reflect.ValueOf(val).IsZero()
+}
 
+func IsSchemaEmpty(schema string) (valid bool) {
+	if schema == "" {
+		return
+	}
+	m := make(map[string]interface{})
+	_ = json.Unmarshal([]byte(schema), &m)
+	if m["properties"] == nil {
+		return
+	}
+	valid = true
+	return
+}
+func FindEntityType(content []byte) (entity.EntityType, error) {
+	var tempMap map[string]interface{}
+	if err := json.Unmarshal(content, &tempMap); err != nil {
+		return "", ErrUnmarshal(err)
+	}
+	schemaVersion, err := Cast[string](tempMap["schemaVersion"])
+	if err != nil {
+		return "", ErrInvalidSchemaVersion
+	}
+	lastIndex := strings.LastIndex(schemaVersion, "/")
+	if lastIndex != -1 {
+		schemaVersion = schemaVersion[:lastIndex]
+	}
+	switch schemaVersion {
+	case "relationships.meshplay.io":
+		return entity.RelationshipDefinition, nil
+	case "components.meshplay.io":
+		return entity.ComponentDefinition, nil
+	case "models.meshplay.io":
+		return entity.Model, nil
+	case "policies.meshplay.io":
+		return entity.PolicyDefinition, nil
+	}
+	return "", ErrInvalidSchemaVersion
+}
+
+// RecursiveCastMapStringInterfaceToMapStringInterface will convert a
+// map[string]interface{} recursively => map[string]interface{}
+func RecursiveCastMapStringInterfaceToMapStringInterface(in map[string]interface{}) map[string]interface{} {
+	res := ConvertMapInterfaceMapString(in)
+	out, ok := res.(map[string]interface{})
+	if !ok {
+		fmt.Println("failed to cast")
+	}
+
+	return out
+}
+
+// ConvertMapInterfaceMapString converts map[interface{}]interface{} => map[string]interface{}
+//
+// It will also convert []interface{} => []string
+func ConvertMapInterfaceMapString(v interface{}) interface{} {
+	switch x := v.(type) {
+	case map[interface{}]interface{}:
+		m := map[string]interface{}{}
+		for k, v2 := range x {
+			switch k2 := k.(type) {
+			case string:
+				m[k2] = ConvertMapInterfaceMapString(v2)
+			default:
+				m[fmt.Sprint(k)] = ConvertMapInterfaceMapString(v2)
+			}
+		}
+		v = m
+
+	case []interface{}:
+		for i, v2 := range x {
+			x[i] = ConvertMapInterfaceMapString(v2)
+		}
+
+	case map[string]interface{}:
+		for k, v2 := range x {
+			x[k] = ConvertMapInterfaceMapString(v2)
+		}
+	}
+
+	return v
 }

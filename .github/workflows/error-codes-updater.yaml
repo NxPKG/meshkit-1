@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@master
       # token here with write access to meshkit repo
         with:
-          token: ${{ secrets.ORG_REPO_TOKEN }}
+          token: ${{ secrets.GH_ACCESS_TOKEN }}
           ref: 'master'
 
       - name: Setup Go
@@ -26,6 +26,9 @@ jobs:
       - name: Run utility
         run: |
           go run github.com/khulnasoft/meshkit/cmd/errorutil -d . update --skip-dirs meshplay -i ./helpers -o ./helpers
+
+      - name: Pull changes from remote
+        run: git pull origin master
 
       # to update errorutil* files in meshkit repo
       - name: Commit changes
@@ -42,9 +45,9 @@ jobs:
       - name: Checkout meshplay
         uses: actions/checkout@master
         with:
-          repository: 'khulnasoft/meshplay'
+          repository: 'meshplay/meshplay'
           # token with write access to meshplay repository
-          token: ${{ secrets.ORG_REPO_TOKEN }}
+          token: ${{ secrets.GH_ACCESS_TOKEN }}
           path: 'meshplay'
           ref: 'master'
 

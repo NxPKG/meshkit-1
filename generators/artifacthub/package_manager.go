@@ -3,7 +3,7 @@ package artifacthub
 import (
 	"fmt"
 
-	"github.com/khulnasoft/meshkit/models"
+	"github.com/khulnasoft/meshkit/generators/models"
 )
 
 type ArtifactHubPackageManager struct {
@@ -16,6 +16,9 @@ func (ahpm ArtifactHubPackageManager) GetPackage() (models.Package, error) {
 	pkgs, err := GetAhPackagesWithName(ahpm.PackageName)
 	if err != nil {
 		return nil, err
+	}
+	if len(pkgs) == 0 {
+		return nil, ErrNoPackageFound(ahpm.PackageName, "Artifacthub")
 	}
 	// update package information
 	for i, ap := range pkgs {
