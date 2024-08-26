@@ -3,7 +3,7 @@ package github
 import (
 	"net/url"
 
-	"github.com/khulnasoft/meshkit/models"
+	"github.com/khulnasoft/meshkit/generators/models"
 )
 
 type DownloaderScheme interface {

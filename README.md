@@ -1,9 +1,9 @@
 # MeshKit for Meshplay and it's ecosystem
 A toolkit for Meshplay's microservices and various individual architectural components to reuse and share common functionality. Learn more: [Introducing MeshKit and the Meshplay Adapter Library](https://khulnasoft.com/blog/meshplay/introducing-meshkit-and-the-meshplay-adapter-library)
 
-[![](https://github.com/khulnasoft/meshkit/actions/workflows/ci.yml/badge.svg)](https://github.com/khulnasoft/meshkit/actions/workflows/ci.yml)
-[![](https://github.com/khulnasoft/meshkit/actions/workflows/release-drafter.yml/badge.svg)](https://github.com/khulnasoft/meshkit/actions/workflows/release-drafter.yml)
-[![](https://github.com/khulnasoft/meshkit/actions/workflows/error-codes-updater.yaml/badge.svg)](https://github.com/khulnasoft/meshkit/actions/workflows/error-codes-updater.yaml)
+[![](https://github.com/meshplay/meshkit/actions/workflows/ci.yml/badge.svg)](https://github.com/meshplay/meshkit/actions/workflows/ci.yml)
+[![](https://github.com/meshplay/meshkit/actions/workflows/release-drafter.yml/badge.svg)](https://github.com/meshplay/meshkit/actions/workflows/release-drafter.yml)
+[![](https://github.com/meshplay/meshkit/actions/workflows/error-codes-updater.yaml/badge.svg)](https://github.com/meshplay/meshkit/actions/workflows/error-codes-updater.yaml)
 
 <div>&nbsp;</div>
 
@@ -44,5 +44,5 @@ Find out more on the <a href="https://khulnasoft.com/community">KhulnaSoft commu
 ✔️ <em><strong>Discuss</strong></em> in the <a href="https://discuss.khulnasoft.com">Community Forum</a>.<br />
 </p>
 <p align="center">
-<i>Not sure where to start?</i> Grab an open issue with the <a href="https://github.com/khulnasoft/KhulnaSoft/labels/help%20wanted">help-wanted label</a>.
+<i>Not sure where to start?</i> Grab an open issue with the <a href="https://github.com/khulnasoft/khulnasoft/labels/help%20wanted">help-wanted label</a>.
 </p>

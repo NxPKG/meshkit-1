@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/khulnasoft/meshkit/models/meshmodel/core/v1alpha1"
 	"github.com/khulnasoft/meshkit/models/meshmodel/registry"
+	"github.com/khulnasoft/meshkit/models/meshmodel/registry/v1alpha3"
 	"github.com/khulnasoft/meshkit/utils"
+	"github.com/meshplay/schemas/models/v1beta1/pattern"
 	"github.com/open-policy-agent/opa/rego"
+
 	"github.com/open-policy-agent/opa/storage"
 	"github.com/open-policy-agent/opa/storage/inmem"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 )
 
 type Rego struct {
@@ -26,7 +27,10 @@ func NewRegoInstance(policyDir string, regManager *registry.RegistryManager) (*R
 	var store storage.Store
 
 	ctx := context.Background()
-	registeredRelationships, _, _ := regManager.GetEntities(&v1alpha1.RelationshipFilter{})
+	registeredRelationships, _, _, err := regManager.GetEntities(&v1alpha3.RelationshipFilter{})
+	if err != nil {
+		return nil, err
+	}
 
 	if len(registeredRelationships) > 0 {
 		data := map[string]interface{}{
@@ -45,9 +49,10 @@ func NewRegoInstance(policyDir string, regManager *registry.RegistryManager) (*R
 }
 
 // RegoPolicyHandler takes the required inputs and run the query against all the policy files provided
-func (r *Rego) RegoPolicyHandler(regoQueryString string, designFile []byte) (interface{}, error) {
+func (r *Rego) RegoPolicyHandler(designFile pattern.PatternFile, regoQueryString string, relationshipsToEvalaute ...string) (pattern.EvaluationResponse, error) {
+	var evaluationResponse pattern.EvaluationResponse
 	if r == nil {
-		return nil, ErrEval(fmt.Errorf("policy engine is not yet ready"))
+		return evaluationResponse, ErrEval(fmt.Errorf("policy engine is not yet ready"))
 	}
 	regoEngine, err := rego.New(
 		rego.Query(regoQueryString),
@@ -57,29 +62,37 @@ func (r *Rego) RegoPolicyHandler(regoQueryString string, designFile []byte) (int
 	).PrepareForEval(r.ctx)
 	if err != nil {
 		logrus.Error("error preparing for evaluation", err)
-		return nil, ErrPrepareForEval(err)
+		return evaluationResponse, ErrPrepareForEval(err)
 	}
 
-	var input map[string]interface{}
-	err = yaml.Unmarshal((designFile), &input)
+	eval_result, err := regoEngine.Eval(r.ctx, rego.EvalInput(designFile))
 	if err != nil {
-		return nil, utils.ErrUnmarshal(err)
+		return evaluationResponse, ErrEval(err)
 	}
 
-	eval_result, err := regoEngine.Eval(r.ctx, rego.EvalInput(input))
+	if len(eval_result) == 0 {
+		return evaluationResponse, ErrEval(fmt.Errorf("evaluation results are empty"))
+	}
+
+	if len(eval_result[0].Expressions) == 0 {
+		return evaluationResponse, ErrEval(fmt.Errorf("evaluation results are empty"))
+	}
+
+	result, err := utils.Cast[map[string]interface{}](eval_result[0].Expressions[0].Value)
 	if err != nil {
-		return nil, ErrEval(err)
+		return evaluationResponse, ErrEval(err)
 	}
 
-	if !eval_result.Allowed() {
-		if len(eval_result) > 0 {
-			if len(eval_result[0].Expressions) > 0 {
-				return eval_result[0].Expressions[0].Value, nil
-			}
-			return nil, ErrEval(fmt.Errorf("evaluation results are empty"))
-		}
-		return nil, ErrEval(fmt.Errorf("evaluation results are empty"))
+	evalResults, ok := result["evaluate"]
+	if !ok {
+		return evaluationResponse, ErrEval(fmt.Errorf("evaluation results are empty"))
 	}
 
-	return nil, ErrEval(err)
+	evaluationResponse, err = utils.MarshalAndUnmarshal[interface{}, pattern.EvaluationResponse](evalResults)
+	if err != nil {
+		return evaluationResponse, err
+	}
+
+	return evaluationResponse, nil
+
 }

@@ -60,7 +60,7 @@ func getDefinitions(parsedCrd cue.Value, resource int, cfg Config, ctx context.C
 			def.ObjectMeta.Name += "." + cfg.Type
 			def.Spec.DefinitionRef.Name += "." + cfg.Type
 		}
-		def.Spec.DefinitionRef.Name += ".meshplay.khulnasoft.com"
+		def.Spec.DefinitionRef.Name += ".meshplay.khulnasoft.comt.com"
 	case K8s:
 		def.Spec.Metadata = map[string]string{
 			"@type":         "pattern.meshplay.io/k8s",
@@ -69,7 +69,7 @@ func getDefinitions(parsedCrd cue.Value, resource int, cfg Config, ctx context.C
 			"version":       cfg.K8sVersion,
 		}
 		def.ObjectMeta.Name += ".K8s"
-		def.Spec.DefinitionRef.Name = strings.ToLower(resourceId) + ".k8s.meshplay.khulnasoft.com"
+		def.Spec.DefinitionRef.Name = strings.ToLower(resourceId) + ".k8s.meshplay.khulnasoft.comt.com"
 	case MESHPLAY:
 		def.Spec.Metadata = map[string]string{
 			"@type": "pattern.meshplay.io/core",
